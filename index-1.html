@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotionScript — 3D Animation Engine</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1 class="logo">MotionScript</h1>
+                <span class="tagline">Text-Driven 3D Animation</span>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Code Editor Panel -->
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <h2>Script Editor</h2>
+                    <div class="editor-actions">
+                        <button class="btn-secondary" id="clearBtn">Clear</button>
+                        <button class="btn-primary" id="parseBtn">Parse & Render</button>
+                    </div>
+                </div>
+                <div class="editor-container">
+                    <textarea id="codeEditor" spellcheck="false" placeholder="Enter MotionScript commands..."></textarea>
+                    <div class="line-numbers" id="lineNumbers"></div>
+                </div>
+                <div class="examples-section">
+                    <span class="examples-label">Examples:</span>
+                    <button class="example-btn" data-example="bouncing">Bouncing Ball</button>
+                    <button class="example-btn" data-example="cubes">Rotating Cubes</button>
+                    <button class="example-btn" data-example="cinematic">Cinematic Camera</button>
+                </div>
+            </div>
+
+            <!-- Viewport Panel -->
+            <div class="viewport-panel">
+                <div class="panel-header">
+                    <h2>Viewport</h2>
+                    <div class="viewport-info">
+                        <span id="fpsCounter">0 FPS</span>
+                    </div>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="renderCanvas"></canvas>
+                    <div class="canvas-overlay" id="canvasOverlay">
+                        <div class="overlay-message">Parse your script to see the magic ✨</div>
+                    </div>
+                </div>
+                <div class="timeline-controls">
+                    <button class="control-btn" id="playBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M3 2L13 8L3 14V2Z"/>
+                        </svg>
+                    </button>
+                    <button class="control-btn" id="pauseBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="4" y="2" width="3" height="12"/>
+                            <rect x="9" y="2" width="3" height="12"/>
+                        </svg>
+                    </button>
+                    <button class="control-btn" id="resetBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 2C4.7 2 2 4.7 2 8s2.7 6 6 6c2.8 0 5.2-1.9 5.8-4.5h-2.1C11.2 11 9.7 12 8 12c-2.2 0-4-1.8-4-4s1.8-4 4-4c1.1 0 2.1.5 2.8 1.2L9 7h5V2l-1.8 1.8C11.2 2.7 9.7 2 8 2z"/>
+                        </svg>
+                    </button>
+                    <div class="timeline-bar">
+                        <div class="timeline-progress" id="timelineProgress"></div>
+                        <input type="range" id="timelineSeek" min="0" max="100" value="0" step="0.1">
+                    </div>
+                    <span class="time-display" id="timeDisplay">0.0s / 0.0s</span>
+                    <button class="control-btn record-btn" id="recordBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="8" cy="8" r="5"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Console -->
+        <div class="console-panel" id="consolePanel">
+            <div class="console-header">
+                <h3>Console</h3>
+                <button class="console-close" id="consoleClose">×</button>
+            </div>
+            <div class="console-content" id="consoleContent"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
