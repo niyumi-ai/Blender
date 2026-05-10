@@ -1,106 +1,525 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotionScript — 3D Animation Engine</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MotionScript 3D — Blender-Like Engine</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="header-left">
-                <h1 class="logo">MotionScript</h1>
-                <span class="tagline">Text-Driven 3D Animation</span>
-            </div>
-            <div class="header-right">
-                <div class="status-indicator">
-                    <span class="status-dot"></span>
-                    <span class="status-text">Ready</span>
-                </div>
-            </div>
-        </header>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Code Editor Panel -->
-            <div class="editor-panel">
-                <div class="panel-header">
-                    <h2>Script Editor</h2>
-                    <div class="editor-actions">
-                        <button class="btn-secondary" id="clearBtn">Clear</button>
-                        <button class="btn-primary" id="parseBtn">Parse & Render</button>
-                    </div>
-                </div>
-                <div class="editor-container">
-                    <textarea id="codeEditor" spellcheck="false" placeholder="Enter MotionScript commands..."></textarea>
-                    <div class="line-numbers" id="lineNumbers"></div>
-                </div>
-                <div class="examples-section">
-                    <span class="examples-label">Examples:</span>
-                    <button class="example-btn" data-example="bouncing">Bouncing Ball</button>
-                    <button class="example-btn" data-example="cubes">Rotating Cubes</button>
-                    <button class="example-btn" data-example="cinematic">Cinematic Camera</button>
-                </div>
-            </div>
+<!-- ROTATE OVERLAY -->
+<div id="rotateOverlay" class="rotate-overlay">
+  <div class="rotate-box">
+    <div class="rotate-icon">⟳</div>
+    <h2>Rotate Your Device</h2>
+    <p>This app requires landscape mode</p>
+  </div>
+</div>
 
-            <!-- Viewport Panel -->
-            <div class="viewport-panel">
-                <div class="panel-header">
-                    <h2>Viewport</h2>
-                    <div class="viewport-info">
-                        <span id="fpsCounter">0 FPS</span>
-                    </div>
-                </div>
-                <div class="canvas-container">
-                    <canvas id="renderCanvas"></canvas>
-                    <div class="canvas-overlay" id="canvasOverlay">
-                        <div class="overlay-message">Parse your script to see the magic ✨</div>
-                    </div>
-                </div>
-                <div class="timeline-controls">
-                    <button class="control-btn" id="playBtn">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path d="M3 2L13 8L3 14V2Z"/>
-                        </svg>
-                    </button>
-                    <button class="control-btn" id="pauseBtn">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <rect x="4" y="2" width="3" height="12"/>
-                            <rect x="9" y="2" width="3" height="12"/>
-                        </svg>
-                    </button>
-                    <button class="control-btn" id="resetBtn">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path d="M8 2C4.7 2 2 4.7 2 8s2.7 6 6 6c2.8 0 5.2-1.9 5.8-4.5h-2.1C11.2 11 9.7 12 8 12c-2.2 0-4-1.8-4-4s1.8-4 4-4c1.1 0 2.1.5 2.8 1.2L9 7h5V2l-1.8 1.8C11.2 2.7 9.7 2 8 2z"/>
-                        </svg>
-                    </button>
-                    <div class="timeline-bar">
-                        <div class="timeline-progress" id="timelineProgress"></div>
-                        <input type="range" id="timelineSeek" min="0" max="100" value="0" step="0.1">
-                    </div>
-                    <span class="time-display" id="timeDisplay">0.0s / 0.0s</span>
-                    <button class="control-btn record-btn" id="recordBtn">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <circle cx="8" cy="8" r="5"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
+<!-- APP ROOT -->
+<div class="app" id="app">
+
+  <!-- ═══ TOP TOOLBAR ═══ -->
+  <header class="toolbar">
+    <div class="tb-left">
+      <span class="logo">Motion<span>Script</span> 3D</span>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btnNew" title="New Scene">⊕ New</button>
+      <button class="tb-btn" id="btnSave" title="Save Project">💾 Save</button>
+      <button class="tb-btn" id="btnLoad" title="Load Project">📂 Load</button>
+      <input type="file" id="fileInput" accept=".motion,.json" style="display:none">
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btnExportPNG" title="Export PNG">🖼 PNG</button>
+      <button class="tb-btn" id="btnExportVid" title="Export Video">🎬 Video</button>
+    </div>
+    <div class="tb-center">
+      <div class="mode-switch">
+        <button class="mode-btn active" id="modeCode" data-mode="code">⌨ Code</button>
+        <button class="mode-btn" id="modeManual" data-mode="manual">🖱 Manual</button>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="gizmo-group">
+        <button class="gizmo-btn active" data-gizmo="translate" title="Move (W)">↔ Move</button>
+        <button class="gizmo-btn" data-gizmo="rotate" title="Rotate (E)">↻ Rotate</button>
+        <button class="gizmo-btn" data-gizmo="scale" title="Scale (R)">⤡ Scale</button>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button class="tb-icon" id="btnGrid" title="Toggle Grid" data-active="true">⊞</button>
+      <button class="tb-icon" id="btnAxis" title="Toggle Axes" data-active="true">⟲</button>
+      <button class="tb-icon" id="btnShadow" title="Toggle Shadows" data-active="true">◐</button>
+      <div class="tb-sep"></div>
+      <div class="fps-box"><span id="fpsVal">60</span> FPS</div>
+      <div class="stats-box">
+        <span id="statObjects">0</span> obj &nbsp;
+        <span id="statLights">0</span> lights
+      </div>
+      <button class="tb-icon" id="btnHelp" title="Help">?</button>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN WORKSPACE ═══ -->
+  <div class="workspace">
+
+    <!-- LEFT PANEL -->
+    <div class="panel-left" id="panelLeft">
+      <div class="panel-tabs">
+        <button class="ptab active" data-ptab="editor">Code</button>
+        <button class="ptab" data-ptab="outliner">Scene</button>
+      </div>
+
+      <!-- Code Editor -->
+      <div class="ptab-content active" id="ptabEditor">
+        <div class="editor-toolbar">
+          <button class="sm-btn green" id="btnRun">▶ Run</button>
+          <button class="sm-btn" id="btnClear">✕ Clear</button>
+          <button class="sm-btn" id="btnFormat">⟳ Format</button>
         </div>
-
-        <!-- Error Console -->
-        <div class="console-panel" id="consolePanel">
-            <div class="console-header">
-                <h3>Console</h3>
-                <button class="console-close" id="consoleClose">×</button>
-            </div>
-            <div class="console-content" id="consoleContent"></div>
+        <div class="editor-wrap">
+          <div class="line-nums" id="lineNums"></div>
+          <textarea id="codeEditor" spellcheck="false" placeholder="Enter MotionScript commands...&#10;&#10;Type or click Examples below ↓"></textarea>
         </div>
+        <div class="examples-bar">
+          <span class="ex-label">Examples:</span>
+          <button class="ex-btn" data-ex="bouncing">Bounce</button>
+          <button class="ex-btn" data-ex="neon">Neon</button>
+          <button class="ex-btn" data-ex="cinematic">Cinematic</button>
+          <button class="ex-btn" data-ex="car">Car Scene</button>
+        </div>
+      </div>
+
+      <!-- Outliner -->
+      <div class="ptab-content" id="ptabOutliner">
+        <div class="outliner-header">
+          <span>Scene Hierarchy</span>
+          <button class="sm-btn green" id="btnAddObj">+ Object</button>
+          <button class="sm-btn" id="btnAddLight">+ Light</button>
+        </div>
+        <div class="outliner-tree" id="outlinerTree">
+          <div class="outliner-empty">No objects yet</div>
+        </div>
+      </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- CENTER VIEWPORT -->
+    <div class="viewport-wrap">
+      <div class="vp-header">
+        <div class="vp-info">
+          <span id="vpFps">60 FPS</span>
+          <span class="vp-sep">|</span>
+          <span id="vpObjects">0 Objects</span>
+          <span class="vp-sep">|</span>
+          <span id="vpLights">0 Lights</span>
+          <span class="vp-sep">|</span>
+          <span id="vpSelected">Nothing selected</span>
+        </div>
+        <div class="vp-tools">
+          <button class="vp-tool-btn" id="vpGrid" title="Grid" data-on="true">⊞</button>
+          <button class="vp-tool-btn" id="vpAxis" title="Axes" data-on="true">⟲</button>
+          <button class="vp-tool-btn" id="vpWire" title="Wireframe" data-on="false">◻</button>
+          <button class="vp-tool-btn" id="vpShadow" title="Shadows" data-on="true">◐</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="mainCanvas"></canvas>
+        <div class="vp-overlay" id="vpOverlay">
+          <div class="overlay-msg">
+            <div class="overlay-icon">◈</div>
+            <h3>MotionScript 3D</h3>
+            <p>Write code and click ▶ Run, or switch to Manual mode</p>
+          </div>
+        </div>
+        <div class="sel-badge" id="selBadge" style="display:none"></div>
+      </div>
+
+      <!-- Playback Bar -->
+      <div class="playback-bar">
+        <button class="pb-btn" id="pbReset" title="Reset">⏮</button>
+        <button class="pb-btn large" id="pbPlay" title="Play">▶</button>
+        <button class="pb-btn" id="pbPause" title="Pause">⏸</button>
+        <div class="pb-timeline">
+          <div class="pb-progress" id="pbProgress"></div>
+          <div class="pb-keyframes" id="pbKeyframes"></div>
+          <input type="range" id="pbSeek" min="0" max="1000" value="0">
+        </div>
+        <span class="pb-time" id="pbTime">0.00s / 0.00s</span>
+        <button class="pb-btn rec" id="pbRecord" title="Record Video">⏺</button>
+        <span class="rec-indicator" id="recIndicator" style="display:none">● REC</span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel-right" id="panelRight">
+      <div class="panel-tabs">
+        <button class="ptab active" data-ptab="scene">Scene</button>
+        <button class="ptab" data-ptab="object">Object</button>
+        <button class="ptab" data-ptab="material">Material</button>
+        <button class="ptab" data-ptab="lights">Lights</button>
+        <button class="ptab" data-ptab="camera">Camera</button>
+      </div>
+
+      <!-- Scene Tab -->
+      <div class="ptab-content active" id="ptabScene">
+        <div class="prop-section">
+          <div class="prop-title">Scene Settings</div>
+          <div class="prop-row">
+            <label>Duration</label>
+            <input type="number" id="sceneDuration" value="8" min="0.1" max="600" step="0.1">
+            <span class="unit">s</span>
+          </div>
+          <div class="prop-row">
+            <label>Loop</label>
+            <label class="toggle"><input type="checkbox" id="sceneLoop" checked><span></span></label>
+          </div>
+          <div class="prop-row">
+            <label>Background</label>
+            <input type="color" id="sceneBg" value="#0a0e14" class="color-inp">
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-title">Environment</div>
+          <div class="prop-row">
+            <label>Fog</label>
+            <label class="toggle"><input type="checkbox" id="scFogOn"><span></span></label>
+          </div>
+          <div class="prop-row">
+            <label>Fog Density</label>
+            <input type="range" id="scFogDensity" min="0" max="0.1" step="0.001" value="0.02">
+            <span id="scFogDensityVal">0.02</span>
+          </div>
+          <div class="prop-row">
+            <label>Fog Color</label>
+            <input type="color" id="scFogColor" value="#1a1f3a" class="color-inp">
+          </div>
+          <div class="prop-row">
+            <label>Ground</label>
+            <label class="toggle"><input type="checkbox" id="scGround"><span></span></label>
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-title">Post-Processing</div>
+          <div class="prop-row">
+            <label>Bloom</label>
+            <label class="toggle"><input type="checkbox" id="scBloom"><span></span></label>
+          </div>
+          <div class="prop-row">
+            <label>Bloom Strength</label>
+            <input type="range" id="scBloomStr" min="0" max="3" step="0.1" value="0.7">
+            <span id="scBloomStrVal">0.7</span>
+          </div>
+          <div class="prop-row">
+            <label>Vignette</label>
+            <label class="toggle"><input type="checkbox" id="scVignette"><span></span></label>
+          </div>
+          <div class="prop-row">
+            <label>Motion Blur</label>
+            <label class="toggle"><input type="checkbox" id="scMotionBlur"><span></span></label>
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-title">Color Grading</div>
+          <div class="prop-row">
+            <label>Contrast</label>
+            <input type="range" id="scContrast" min="0.5" max="2" step="0.01" value="1">
+            <span id="scContrastVal">1.0</span>
+          </div>
+          <div class="prop-row">
+            <label>Saturation</label>
+            <input type="range" id="scSaturation" min="0" max="2" step="0.01" value="1">
+            <span id="scSaturationVal">1.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Object Tab -->
+      <div class="ptab-content" id="ptabObject">
+        <div id="objPropsEmpty" class="no-selection">
+          <div>◈</div>
+          <p>Select an object in the viewport or scene panel</p>
+        </div>
+        <div id="objProps" style="display:none">
+          <div class="prop-section">
+            <div class="prop-title">Transform</div>
+            <div class="prop-row">
+              <label>Name</label>
+              <input type="text" id="objName" class="name-inp">
+            </div>
+            <div class="vec3-row">
+              <label>Position</label>
+              <input type="number" id="objPx" step="0.1" placeholder="X">
+              <input type="number" id="objPy" step="0.1" placeholder="Y">
+              <input type="number" id="objPz" step="0.1" placeholder="Z">
+            </div>
+            <div class="vec3-row">
+              <label>Rotation</label>
+              <input type="number" id="objRx" step="1" placeholder="X°">
+              <input type="number" id="objRy" step="1" placeholder="Y°">
+              <input type="number" id="objRz" step="1" placeholder="Z°">
+            </div>
+            <div class="vec3-row">
+              <label>Scale</label>
+              <input type="number" id="objSx" step="0.1" placeholder="X">
+              <input type="number" id="objSy" step="0.1" placeholder="Y">
+              <input type="number" id="objSz" step="0.1" placeholder="Z">
+            </div>
+          </div>
+          <div class="prop-section">
+            <div class="prop-title">Geometry</div>
+            <div class="prop-row">
+              <label>Type</label>
+              <select id="objType">
+                <option value="sphere">Sphere</option>
+                <option value="cube">Cube</option>
+                <option value="cylinder">Cylinder</option>
+                <option value="cone">Cone</option>
+                <option value="plane">Plane</option>
+                <option value="torus">Torus</option>
+                <option value="torusKnot">Torus Knot</option>
+                <option value="dodecahedron">Dodecahedron</option>
+                <option value="icosahedron">Icosahedron</option>
+              </select>
+            </div>
+            <div class="prop-row">
+              <label>Segments</label>
+              <input type="number" id="objSegments" min="3" max="128" step="1" value="32">
+            </div>
+            <div class="prop-row">
+              <label>Shading</label>
+              <select id="objShading">
+                <option value="smooth">Smooth</option>
+                <option value="flat">Flat</option>
+              </select>
+            </div>
+            <div class="prop-row">
+              <label>Wireframe</label>
+              <label class="toggle"><input type="checkbox" id="objWireframe"><span></span></label>
+            </div>
+            <div class="prop-row">
+              <label>Visible</label>
+              <label class="toggle"><input type="checkbox" id="objVisible" checked><span></span></label>
+            </div>
+          </div>
+          <div class="prop-section">
+            <div class="prop-title">Actions</div>
+            <div class="action-row">
+              <button class="sm-btn" id="btnDuplicate">⧉ Duplicate</button>
+              <button class="sm-btn red" id="btnDeleteObj">✕ Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Material Tab -->
+      <div class="ptab-content" id="ptabMaterial">
+        <div id="matPropsEmpty" class="no-selection">
+          <div>◈</div>
+          <p>Select an object to edit its material</p>
+        </div>
+        <div id="matProps" style="display:none">
+          <div class="prop-section">
+            <div class="prop-title">Material</div>
+            <div class="prop-row">
+              <label>Preset</label>
+              <select id="matPreset">
+                <option value="">Custom</option>
+                <option value="metal">Metal</option>
+                <option value="glass">Glass</option>
+                <option value="plastic">Plastic</option>
+                <option value="neon">Neon</option>
+                <option value="matte">Matte</option>
+                <option value="mirror">Mirror</option>
+              </select>
+            </div>
+            <div class="prop-row">
+              <label>Color</label>
+              <input type="color" id="matColor" value="#ffffff" class="color-inp">
+            </div>
+            <div class="prop-row">
+              <label>Metalness</label>
+              <input type="range" id="matMetalness" min="0" max="1" step="0.01" value="0.5">
+              <span id="matMetalnessVal">0.5</span>
+            </div>
+            <div class="prop-row">
+              <label>Roughness</label>
+              <input type="range" id="matRoughness" min="0" max="1" step="0.01" value="0.5">
+              <span id="matRoughnessVal">0.5</span>
+            </div>
+            <div class="prop-row">
+              <label>Opacity</label>
+              <input type="range" id="matOpacity" min="0" max="1" step="0.01" value="1">
+              <span id="matOpacityVal">1.0</span>
+            </div>
+          </div>
+          <div class="prop-section">
+            <div class="prop-title">Emissive (Glow)</div>
+            <div class="prop-row">
+              <label>Emissive</label>
+              <input type="color" id="matEmissive" value="#000000" class="color-inp">
+            </div>
+            <div class="prop-row">
+              <label>Intensity</label>
+              <input type="range" id="matEmissiveInt" min="0" max="10" step="0.1" value="0">
+              <span id="matEmissiveIntVal">0</span>
+            </div>
+          </div>
+          <div class="prop-section">
+            <div class="prop-title">Texture Maps</div>
+            <div class="prop-row">
+              <label>Diffuse Map</label>
+              <input type="file" id="matTexFile" accept="image/*" class="file-inp">
+            </div>
+            <div class="prop-row">
+              <label>Normal Map</label>
+              <input type="file" id="matNormFile" accept="image/*" class="file-inp">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lights Tab -->
+      <div class="ptab-content" id="ptabLights">
+        <div class="lights-header">
+          <span>Scene Lights</span>
+          <button class="sm-btn green" id="btnAddLight2">+ Add Light</button>
+        </div>
+        <div id="lightsList" class="lights-list">
+          <div class="no-lights">No lights. Add one above.</div>
+        </div>
+      </div>
+
+      <!-- Camera Tab -->
+      <div class="ptab-content" id="ptabCamera">
+        <div class="prop-section">
+          <div class="prop-title">Camera</div>
+          <div class="vec3-row">
+            <label>Position</label>
+            <input type="number" id="camPx" step="0.1" value="0">
+            <input type="number" id="camPy" step="0.1" value="5">
+            <input type="number" id="camPz" step="0.1" value="10">
+          </div>
+          <div class="vec3-row">
+            <label>Look At</label>
+            <input type="number" id="camLx" step="0.1" value="0">
+            <input type="number" id="camLy" step="0.1" value="0">
+            <input type="number" id="camLz" step="0.1" value="0">
+          </div>
+          <div class="prop-row">
+            <label>FOV</label>
+            <input type="range" id="camFov" min="20" max="120" step="1" value="75">
+            <span id="camFovVal">75°</span>
+          </div>
+          <div class="prop-row">
+            <label>Near</label>
+            <input type="number" id="camNear" value="0.1" step="0.01" min="0.01">
+          </div>
+          <div class="prop-row">
+            <label>Far</label>
+            <input type="number" id="camFar" value="1000" step="10">
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-title">Camera Actions</div>
+          <div class="action-row">
+            <button class="sm-btn" id="btnCamReset">Reset Camera</button>
+            <button class="sm-btn" id="btnCamApply">Apply Values</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TIMELINE ═══ -->
+  <div class="timeline-panel">
+    <div class="tl-header">
+      <span class="tl-title">Timeline</span>
+      <div class="tl-controls">
+        <button class="sm-btn" id="tlZoomIn">+</button>
+        <button class="sm-btn" id="tlZoomOut">-</button>
+        <span id="tlTime" class="tl-time">0.00s</span>
+      </div>
+    </div>
+    <div class="tl-body">
+      <div class="tl-labels" id="tlLabels"></div>
+      <div class="tl-tracks-wrap">
+        <canvas id="timelineCanvas" class="tl-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONSOLE ═══ -->
+  <div class="console-panel" id="consolePanel" style="display:none">
+    <div class="con-header">
+      <span>Console</span>
+      <button class="sm-btn" id="conClear">Clear</button>
+      <button class="sm-btn" id="conClose">✕</button>
+    </div>
+    <div class="con-body" id="conBody"></div>
+  </div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Add Object Modal -->
+<div class="modal-overlay" id="modalAddObj" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Object</h3>
+      <button class="modal-close" data-modal="modalAddObj">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="obj-grid">
+        <button class="obj-card" data-type="sphere"><div class="obj-icon">●</div><span>Sphere</span></button>
+        <button class="obj-card" data-type="cube"><div class="obj-icon">■</div><span>Cube</span></button>
+        <button class="obj-card" data-type="cylinder"><div class="obj-icon">⬛</div><span>Cylinder</span></button>
+        <button class="obj-card" data-type="cone"><div class="obj-icon">▲</div><span>Cone</span></button>
+        <button class="obj-card" data-type="torus"><div class="obj-icon">◯</div><span>Torus</span></button>
+        <button class="obj-card" data-type="plane"><div class="obj-icon">▬</div><span>Plane</span></button>
+        <button class="obj-card" data-type="torusKnot"><div class="obj-icon">∞</div><span>Knot</span></button>
+        <button class="obj-card" data-type="dodecahedron"><div class="obj-icon">⬡</div><span>Dodeca</span></button>
+        <button class="obj-card" data-type="icosahedron"><div class="obj-icon">◆</div><span>Icosa</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Light Modal -->
+<div class="modal-overlay" id="modalAddLight" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Light</h3>
+      <button class="modal-close" data-modal="modalAddLight">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="light-list">
+        <button class="light-card" data-type="directional"><span class="light-icon">☀</span><div><strong>Directional</strong><p>Sun-like parallel light</p></div></button>
+        <button class="light-card" data-type="point"><span class="light-icon">💡</span><div><strong>Point</strong><p>Light from a single point</p></div></button>
+        <button class="light-card" data-type="spot"><span class="light-icon">🔦</span><div><strong>Spot</strong><p>Focused cone beam</p></div></button>
+        <button class="light-card" data-type="ambient"><span class="light-icon">◌</span><div><strong>Ambient</strong><p>Global fill light</p></div></button>
+        <button class="light-card" data-type="hemisphere"><span class="light-icon">◑</span><div><strong>Hemisphere</strong><p>Sky + ground lighting</p></div></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal-overlay" id="modalHelp" style="display:none">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h3>MotionScript DSL Reference</h3>
+      <button class="modal-close" data-modal="modalHelp">✕</button>
+    </div>
+    <div class="modal-body scrollable">
+      <div class="help-content" id="helpContent"></div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
